@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 import google.generativeai as genai
+import markdown
+from bs4 import BeautifulSoup
 
 # ---------- Setup ----------
 load_dotenv()
@@ -102,6 +104,31 @@ def build_prompt(history: List[Dict[str, str]], user_message: str, system_preamb
 
     return "\n".join(lines)
 
+def format_diet_plan(md_text):
+    # 1. Convert to HTML
+    html = markdown.markdown(md_text)
+    soup = BeautifulSoup(html, "html.parser")
+    
+    formatted_output = []
+
+    # 2. Iterate through elements and add custom spacing/styling
+    for element in soup.find_all(['h1', 'h2', 'h3', 'p', 'li']):
+        text = element.get_text().strip()
+        
+        if element.name in ['h1', 'h2', 'h3']:
+            # Headers: Add extra space above and use UPPERCASE
+            formatted_output.append(f"\n\n{text.upper()}\n" + "-" * len(text))
+        
+        elif element.name == 'p':
+            # Paragraphs: Normal spacing
+            formatted_output.append(f"\n{text}")
+            
+        elif element.name == 'li':
+            # Bullet points: Clean indent and a single bullet
+            formatted_output.append(f" • {text}")
+
+    # Join with newlines and clean up any triple-spacing
+    return "\n".join(formatted_output).strip().replace("\n\n\n", "\n\n")
 
 # ---------- Routes ----------
 @app.route("/", methods=["GET"])
@@ -135,9 +162,10 @@ def api_chat():
     try:
         resp = model.generate_content(prompt)
         text = (resp.text or "").strip() if resp else ""
-        if not text:
-            text = "Sorry, I couldn’t generate a response."
-        return jsonify({"reply": text})
+        formatted_text = format_diet_plan(text)  # Apply Markdown formatting for cleaner display in frontend
+        if not formatted_text:
+            formatted_text = "Sorry, I couldn’t generate a response."
+        return jsonify({"reply": formatted_text})
     except Exception as e:
         print(f"Model error: {e}")  # Print error to console for debugging
         return jsonify({"reply": "Something went wrong calling the model.", "error": str(e)}), 500
