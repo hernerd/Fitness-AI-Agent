@@ -87,7 +87,6 @@ def build_prompt(history: List[Dict[str, str]], user_message: str, system_preamb
 
     message_lower = user_message.lower()
 
-    # ✅ FRIDGE DETECTION (non-breaking)
     if (
         "ingredients" in message_lower or
         "fridge" in message_lower or
