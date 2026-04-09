@@ -7,6 +7,7 @@ const profileModal = document.getElementById("profileModal");
 const closeModal = document.getElementById("closeModal");
 const editProfileBtn = document.getElementById("editProfileBtn");
 const profileForm = document.getElementById("profileForm");
+const clearDisplayBtn = document.getElementById("clearDisplayBtn");
 
 const fridgeBtn = document.getElementById("fridgeBtn");
 const fridgeModal = document.getElementById("fridgeModal");
@@ -203,7 +204,6 @@ generateMealsBtn.addEventListener("click", () => {
 
   const message = `I have these ingredients: ${fridgeItems.join(", ")}. What can I make?`;
 
-  // ✅ Use existing chat system (clean integration)
   input.value = message;
 
   fridgeModal.style.display = "none";
@@ -221,7 +221,13 @@ function greeting() {
   );
 }
 
-
+// -------- Clear Visual Screen --------
+if (clearDisplayBtn) {
+    clearDisplayBtn.addEventListener("click", () => {
+        chat.innerHTML = "";
+        addMessage("Display cleared. What future plans can I assist you with?", "bot");
+    });
+}
 
 
 

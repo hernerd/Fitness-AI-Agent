@@ -69,6 +69,17 @@ html, body {
 #chatInput {
   flex:1; padding:12px; border-radius:12px; border:1px solid var(--border); background:#0b1220; color:var(--text);
 }
+/* Optional: Make the clear button look a bit more distinct */
+#clearDisplayBtn {
+  font-size: 13px;
+  padding: 10px 12px;
+  white-space: nowrap; /* Prevents the text from wrapping */
+}
+
+#clearDisplayBtn:hover {
+  border-color: #ef4444; /* Turns red on hover */
+  color: #ef4444;
+}
 .suggestions {
   margin-top: 10px; display:flex; flex-wrap:wrap; gap:8px;
 }
@@ -77,6 +88,7 @@ html, body {
   padding:8px 12px; cursor:pointer; font-size: 14px;
 }
 .chip:hover { border-color: var(--accent-2); color: var(--accent-2); }
+
 
 /* Modal */
 .modal {
