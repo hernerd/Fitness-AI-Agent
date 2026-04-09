@@ -150,6 +150,23 @@ html, body {
 
 .muted { color: var(--muted); }
 
+.export-pdf-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.export-pdf-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* Mobile tweaks */
 @media (max-width: 768px) {
   .modal-card {

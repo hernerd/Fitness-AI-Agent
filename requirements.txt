@@ -1,5 +1,8 @@
-flask
-flask-cors
-python-dotenv
-google-generativeai
-gunicorn
+flask==3.1.2
+flask-cors==6.0.2
+python-dotenv==1.2.1
+google-genai==1.72.0
+gunicorn==25.1.0
+markdown==3.10.2
+beautifulsoup4==4.14.3
+reportlab==4.4.10
