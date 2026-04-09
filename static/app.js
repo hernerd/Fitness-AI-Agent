@@ -8,9 +8,17 @@ const closeModal = document.getElementById("closeModal");
 const editProfileBtn = document.getElementById("editProfileBtn");
 const profileForm = document.getElementById("profileForm");
 
+const fridgeBtn = document.getElementById("fridgeBtn");
+const fridgeModal = document.getElementById("fridgeModal");
+const closeFridgeModal = document.getElementById("closeFridgeModal");
+const fridgeInput = document.getElementById("fridgeInput");
+const fridgeList = document.getElementById("fridgeList");
+const generateMealsBtn = document.getElementById("generateMealsBtn");
+
 // -------- State --------
 let profile = JSON.parse(localStorage.getItem("fitnessProfile") || "null");
 let history = []; // {role: "user"|"assistant", content: string}
+let fridgeItems = JSON.parse(localStorage.getItem("fridgeItems") || "[]");
 
 function showModal() {
   // Prefill if profile exists
@@ -80,10 +88,34 @@ profileForm.addEventListener("submit", (e) => {
   addMessage("Profile saved! Ask for a diet/workout plan anytime, or just chat.", "bot");
 });
 
+fridgeBtn.addEventListener("click", () => {
+  fridgeModal.style.display = "flex";
+  renderFridge();
+});
+
+closeFridgeModal.addEventListener("click", () => {
+  fridgeModal.style.display = "none";
+});
+
 // -------- Send message --------
 sendBtn.addEventListener("click", onSend);
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") onSend();
+});
+
+fridgeInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const value = fridgeInput.value.trim().toLowerCase();
+    if (!value) return;
+
+    if (!fridgeItems.includes(value)) {
+      fridgeItems.push(value);
+      localStorage.setItem("fridgeItems", JSON.stringify(fridgeItems));
+      renderFridge();
+    }
+
+    fridgeInput.value = "";
+  }
 });
 
 function onSend(intentHint = "") {
@@ -127,6 +159,28 @@ function onSend(intentHint = "") {
   });
 }
 
+function renderFridge() {
+  fridgeList.innerHTML = "";
+
+  fridgeItems.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "fridge-item";
+
+    div.innerHTML = `
+      <span>${item}</span>
+      <button>×</button>
+    `;
+
+    div.querySelector("button").addEventListener("click", () => {
+      fridgeItems.splice(index, 1);
+      localStorage.setItem("fridgeItems", JSON.stringify(fridgeItems));
+      renderFridge();
+    });
+
+    fridgeList.appendChild(div);
+  });
+}
+
 // -------- Suggestions chips --------
 document.querySelectorAll(".chip").forEach(chip => {
   chip.addEventListener("click", () => {
@@ -138,6 +192,22 @@ document.querySelectorAll(".chip").forEach(chip => {
     }
     onSend(intent);
   });
+});
+
+generateMealsBtn.addEventListener("click", () => {
+  if (fridgeItems.length === 0) {
+    addMessage("Add some ingredients first!", "bot");
+    return;
+  }
+
+  const message = `I have these ingredients: ${fridgeItems.join(", ")}. What can I make?`;
+
+  // ✅ Use existing chat system (clean integration)
+  input.value = message;
+
+  fridgeModal.style.display = "none";
+
+  onSend(); // uses your existing pipeline
 });
 
 // -------- Greeting --------

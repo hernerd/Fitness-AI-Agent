@@ -20,7 +20,7 @@ if not API_KEY:
 genai.configure(api_key=API_KEY)
 
 # Choose a fast, capable model. You can switch to "gemini-1.5-pro" later.
-MODEL_NAME = "gemini-3-flash"
+MODEL_NAME = "gemini-3-flash-preview"
 model = genai.GenerativeModel(MODEL_NAME)
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -43,6 +43,7 @@ def build_system_preamble(profile: Dict[str, Any]) -> str:
     weight = profile.get("weight", "")
     goal = profile.get("goal", "")
     diet = profile.get("diet", "")
+    cuisine = profile.get("cuisine", "")
     activity = profile.get("activity", "")
     allergies = profile.get("allergies", "")
 
@@ -61,6 +62,7 @@ def build_system_preamble(profile: Dict[str, Any]) -> str:
         f"- Weight: {weight} lbs\n"
         f"- Goal: {goal}\n"
         f"- Diet Preference: {diet}\n"
+        f"- Cuisine: {cuisine or 'none'}\n"
         f"- Activity Level: {activity}\n"
         f"- Allergies: {allergies or 'none'}\n"
 
@@ -74,17 +76,30 @@ def build_system_preamble(profile: Dict[str, Any]) -> str:
 
 
 def build_prompt(history: List[Dict[str, str]], user_message: str, system_preamble: str, intent_hint: str = "") -> str:
-    """
-    Convert chat history + current message into a single prompt for Gemini.
-    We keep it simple & stateless (history comes from the client).
-    """
     lines = [system_preamble, "\nConversation so far:"]
-    for turn in history[-12:]:  # keep last ~12 turns to limit prompt length
+
+    for turn in history[-12:]:
         role = turn.get("role", "user")
         content = turn.get("content", "")
         lines.append(f"{role.capitalize()}: {content}")
 
     lines.append(f"User: {user_message}")
+
+    message_lower = user_message.lower()
+
+    # ✅ FRIDGE DETECTION (non-breaking)
+    if (
+        "ingredients" in message_lower or
+        "fridge" in message_lower or
+        "what can i make" in message_lower or
+        "what can i cook" in message_lower
+    ):
+        lines.append(
+            "\nInstruction: The user listed ingredients they have. "
+            "Suggest 3–5 simple meals using those ingredients. "
+            "Use bullet points. Include short steps for each meal. "
+            "You may include minimal extra pantry items if needed."
+        )
 
     if intent_hint == "variation":
         lines.append(
@@ -92,7 +107,6 @@ def build_prompt(history: List[Dict[str, str]], user_message: str, system_preamb
             "Keep it consistent with the user's profile & preferences."
         )
 
-    # Helpful style instruction
     lines.append(
         "\nAssistant: Respond concisely. Use bullet points for plans/steps. "
         "If giving a day plan, include approximate calories/macros when helpful."
@@ -123,6 +137,11 @@ def api_chat():
     history: List[Dict[str, str]] = data.get("history", [])
     profile: Dict[str, Any] = data.get("profile", {})
     intent_hint: str = data.get("intentHint", "")
+    is_fridge = data.get("isFridge", False)  # optional
+
+    # Detect /fridge command directly
+    if message.lower().startswith("/fridge"):
+        is_fridge = True
 
     if not message:
         return jsonify({"reply": "Please type a message.", "error": None})
