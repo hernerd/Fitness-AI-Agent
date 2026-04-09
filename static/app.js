@@ -77,6 +77,7 @@ profileForm.addEventListener("submit", (e) => {
   data.activity = data.activity || "";
   data.goal = (data.goal || "").toLowerCase();
   data.diet = (data.diet || "").toLowerCase();
+  data.cuisine = (data.cuisine || "");
   data.allergies = (data.allergies || "").trim();
   
   // NEW: Normalize Health Concerns
