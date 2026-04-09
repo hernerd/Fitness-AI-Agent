@@ -7,11 +7,19 @@
 import os
 from typing import List, Dict, Any
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 from flask_cors import CORS
-import google.generativeai as genai
+import google.genai as genai
 import markdown
 from bs4 import BeautifulSoup
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.units import inch
+from io import BytesIO
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module='reportlab')  # Suppress ReportLab warnings about missing fonts, etc.
 
 # ---------- Setup ----------
 load_dotenv()
@@ -19,11 +27,10 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise RuntimeError("GEMINI_API_KEY is missing. Put it in .env as GEMINI_API_KEY=...")
 
-genai.configure(api_key=API_KEY)
+client = genai.Client(api_key=API_KEY)
 
 # Choose a fast, capable model. You can switch to "gemini-1.5-pro" later.
-MODEL_NAME = "gemini-3-flash-preview"
-model = genai.GenerativeModel(MODEL_NAME)
+MODEL_NAME = "gemini-2.5-flash"
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app)
@@ -130,6 +137,34 @@ def format_diet_plan(md_text):
     # Join with newlines and clean up any triple-spacing
     return "\n".join(formatted_output).strip().replace("\n\n\n", "\n\n")
 
+
+def generate_pdf_bytes(text):
+    """Generate PDF from formatted text and return as BytesIO buffer."""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+    
+    story = []
+    lines = text.split('\n')
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        # Check if it's a header (all caps with dashes)
+        if line.isupper() and len(line) > 0:
+            p = Paragraph(line, styles['Heading1'])
+        elif line.startswith('•'):
+            p = Paragraph(line, styles['Normal'])
+        else:
+            p = Paragraph(line, styles['Normal'])
+        story.append(p)
+        story.append(Spacer(1, 0.1 * inch))
+    
+    doc.build(story)
+    buffer.seek(0)
+    return buffer
+
 # ---------- Routes ----------
 @app.route("/", methods=["GET"])
 def home():
@@ -160,7 +195,7 @@ def api_chat():
     prompt = build_prompt(history, message, system_preamble, intent_hint)
 
     try:
-        resp = model.generate_content(prompt)
+        resp = client.models.generate_content(model=MODEL_NAME, contents=prompt)
         text = (resp.text or "").strip() if resp else ""
         formatted_text = format_diet_plan(text)  # Apply Markdown formatting for cleaner display in frontend
         if not formatted_text:
@@ -169,6 +204,26 @@ def api_chat():
     except Exception as e:
         print(f"Model error: {e}")  # Print error to console for debugging
         return jsonify({"reply": "Something went wrong calling the model.", "error": str(e)}), 500
+
+
+@app.route("/api/pdf", methods=["POST"])
+def api_pdf():
+    """
+    Convert already-rendered text to a PDF download.
+    Expected JSON body: { "text": "string" }
+    """
+    data = request.get_json(force=True) or {}
+    text: str = data.get("text", "").strip()
+
+    if not text:
+        return jsonify({"error": "No text provided."}), 400
+
+    try:
+        pdf_buffer = generate_pdf_bytes(text)
+        return send_file(pdf_buffer, as_attachment=True, download_name='fitness_plan.pdf', mimetype='application/pdf')
+    except Exception as e:
+        print(f"PDF error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
