@@ -64,10 +64,30 @@ html, body {
   padding: 10px 16px; background: var(--panel); border-top:1px solid var(--border);
 }
 .input-wrap {
-  display:flex; gap:8px;
+  display: flex; 
+  gap: 8px;
+  align-items: center;
 }
+
 #chatInput {
-  flex:1; padding:12px; border-radius:12px; border:1px solid var(--border); background:#0b1220; color:var(--text);
+  flex: 1; /* This ensures the text box takes up the most space */
+  padding: 12px; 
+  border-radius: 12px; 
+  border: 1px solid var(--border); 
+  background: #0b1220; 
+  color: var(--text);
+}
+
+/* Optional: Make the clear button look a bit more distinct */
+#clearDisplayBtn {
+  font-size: 13px;
+  padding: 10px 12px;
+  white-space: nowrap; /* Prevents the text from wrapping */
+}
+
+#clearDisplayBtn:hover {
+  border-color: #ef4444; /* Turns red on hover */
+  color: #ef4444;
 }
 /* Optional: Make the clear button look a bit more distinct */
 #clearDisplayBtn {
@@ -177,6 +197,21 @@ html, body {
   background: #0b1220;
   color: var(--text);
   margin-top: 10px;
+.export-pdf-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.export-pdf-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Mobile tweaks */

@@ -45,9 +45,43 @@ window.addEventListener("load", () => {
 function addMessage(content, role = "bot") {
   const wrap = document.createElement("div");
   wrap.className = `message ${role}`;
-  wrap.innerText = content;
+
+  const textEl = document.createElement("div");
+  textEl.innerText = content;
+  wrap.appendChild(textEl);
+
+  if (role === "bot") {
+    const btn = document.createElement("button");
+    btn.className = "export-pdf-btn";
+    btn.innerText = "Export PDF";
+    btn.onclick = () => exportPdf(content);
+    wrap.appendChild(btn);
+  }
+
   chat.appendChild(wrap);
   chat.scrollTop = chat.scrollHeight;
+}
+
+async function exportPdf(text) {
+  try {
+    const res = await fetch("/api/pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+    if (!res.ok) throw new Error("PDF generation failed.");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fitness_plan.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    addMessage(`Could not export PDF: ${err.message}`, "bot");
+  }
 }
 
 function addTyping() {
@@ -228,6 +262,7 @@ if (clearDisplayBtn) {
         addMessage("Display cleared. What future plans can I assist you with?", "bot");
     });
 }
+
 
 
 
