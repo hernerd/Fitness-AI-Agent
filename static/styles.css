@@ -189,7 +189,7 @@ html, body {
   font-weight: bold;
 }
 
-#fridgeInput {
+.fridgeInput {
   width: 100%;
   padding: 10px;
   border-radius: 10px;
@@ -197,6 +197,8 @@ html, body {
   background: #0b1220;
   color: var(--text);
   margin-top: 10px;
+}
+
 .export-pdf-btn {
   display: inline-block;
   margin-top: 10px;

@@ -1,9 +1,3 @@
-# import os, json, re
-# from flask import Flask, request, jsonify, render_template
-# from flask_cors import CORS
-# from dotenv import load_dotenv
-# import google.generativeai as genai
-
 import os
 from typing import List, Dict, Any
 from dotenv import load_dotenv
@@ -31,7 +25,6 @@ client = genai.Client(api_key=API_KEY)
 
 # Choose a fast, capable model. You can switch to "gemini-1.5-pro" later.
 MODEL_NAME = "gemini-3-flash-preview"
-model = genai.GenerativeModel(MODEL_NAME)
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 CORS(app)
