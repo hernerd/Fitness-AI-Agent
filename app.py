@@ -1,9 +1,3 @@
-# import os, json, re
-# from flask import Flask, request, jsonify, render_template
-# from flask_cors import CORS
-# from dotenv import load_dotenv
-# import google.generativeai as genai
-
 import os
 from typing import List, Dict, Any
 from dotenv import load_dotenv
@@ -85,17 +79,29 @@ def build_system_preamble(profile: Dict[str, Any]) -> str:
 
 
 def build_prompt(history: List[Dict[str, str]], user_message: str, system_preamble: str, intent_hint: str = "") -> str:
-    """
-    Convert chat history + current message into a single prompt for Gemini.
-    We keep it simple & stateless (history comes from the client).
-    """
     lines = [system_preamble, "\nConversation so far:"]
-    for turn in history[-12:]:  # keep last ~12 turns to limit prompt length
+
+    for turn in history[-12:]:
         role = turn.get("role", "user")
         content = turn.get("content", "")
         lines.append(f"{role.capitalize()}: {content}")
 
     lines.append(f"User: {user_message}")
+
+    message_lower = user_message.lower()
+
+    if (
+        "ingredients" in message_lower or
+        "fridge" in message_lower or
+        "what can i make" in message_lower or
+        "what can i cook" in message_lower
+    ):
+        lines.append(
+            "\nInstruction: The user listed ingredients they have. "
+            "Suggest 3–5 simple meals using those ingredients. "
+            "Use bullet points. Include short steps for each meal. "
+            "You may include minimal extra pantry items if needed."
+        )
 
     if intent_hint == "variation":
         lines.append(
@@ -103,7 +109,6 @@ def build_prompt(history: List[Dict[str, str]], user_message: str, system_preamb
             "Keep it consistent with the user's profile & preferences."
         )
 
-    # Helpful style instruction
     lines.append(
         "\nAssistant: Respond concisely. Use bullet points for plans/steps. "
         "If giving a day plan, include approximate calories/macros when helpful."
@@ -187,6 +192,11 @@ def api_chat():
     history: List[Dict[str, str]] = data.get("history", [])
     profile: Dict[str, Any] = data.get("profile", {})
     intent_hint: str = data.get("intentHint", "")
+    is_fridge = data.get("isFridge", False)  # optional
+
+    # Detect /fridge command directly
+    if message.lower().startswith("/fridge"):
+        is_fridge = True
 
     if not message:
         return jsonify({"reply": "Please type a message.", "error": None})
